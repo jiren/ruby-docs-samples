@@ -1873,6 +1873,102 @@ def set_custom_timeout_and_retry project_id:, instance_id:, database_id:
   # [END spanner_set_custom_timeout_and_retry]
 end
 
+def read_write_execute_query_tagging project_id:, instance_id:, database_id:
+  # [START spanner_set_custom_timeout_and_retry]
+  # project_id  = "Your Google Cloud project ID"
+  # instance_id = "Your Spanner instance ID"
+  # database_id = "Your Spanner database ID"
+
+  require "google/cloud/spanner"
+
+  spanner = Google::Cloud::Spanner.new project: project_id
+  client  = spanner.client instance_id, database_id
+
+  client.read("Albums", [:SingerId, :AlbumId, :AlbumTitle], tag: "Tag-1").rows.each do |row|
+    puts "#{row[:SingerId]} #{row[:AlbumId]} #{row[:AlbumTitle]}"
+  end
+
+  client.execute("SELECT SingerId, AlbumId, AlbumTitle FROM Albums", tag: "Tag-2").rows.each do |row|
+    puts "#{row[:SingerId]} #{row[:AlbumId]} #{row[:AlbumTitle]}"
+  end
+
+  client.commit tag: "Tag-3" do |c|
+    c.insert "Singers", [{ SingerId: 1, FirstName: "Marc", LastName: "Richards" }]
+  end
+end
+
+def batch_write_delete_tagging project_id:, instance_id:, database_id:
+  # [START spanner_set_custom_timeout_and_retry]
+  # project_id  = "Your Google Cloud project ID"
+  # instance_id = "Your Spanner instance ID"
+  # database_id = "Your Spanner database ID"
+
+  require "google/cloud/spanner"
+
+  spanner = Google::Cloud::Spanner.new project: project_id
+  client  = spanner.client instance_id, database_id
+
+  client.insert "Singers", [{ SingerId: 1, FirstName: "Marc", LastName: "Richards" }],
+                tag: "Tag-1"
+
+  client.upsert "Singers", [{ SingerId: 2, FirstName: "Catalina", LastName: "Smith" }],
+                tag: "Tag-2"
+
+  client.update "Singers", [{ SingerId: 1, FirstName: "Marc", LastName: "Richards" }],
+                tag: "Tag-3"
+
+  client.replace "Singers", [{ SingerId: 1, FirstName: "Marc", LastName: "Richards" }],
+                 tag: "Tag-4"
+
+  client.delete "users", [1], tag: "Tag-5"
+end
+
+def partition_update_tagging project_id:, instance_id:, database_id:
+  # [START spanner_set_custom_timeout_and_retry]
+  # project_id  = "Your Google Cloud project ID"
+  # instance_id = "Your Spanner instance ID"
+  # database_id = "Your Spanner database ID"
+
+  require "google/cloud/spanner"
+
+  spanner = Google::Cloud::Spanner.new project: project_id
+  client  = spanner.client instance_id, database_id
+
+  row_count = client.execute_partition_update(
+    "UPDATE Albums SET MarketingBudget = 100000 WHERE SingerId > 1",
+    tag: "Tag-6"
+  )
+end
+
+def transaction_tagging project_id:, instance_id:, database_id:
+  # [START spanner_set_custom_timeout_and_retry]
+  # project_id  = "Your Google Cloud project ID"
+  # instance_id = "Your Spanner instance ID"
+  # database_id = "Your Spanner database ID"
+
+  require "google/cloud/spanner"
+
+  spanner = Google::Cloud::Spanner.new project: project_id
+  client  = spanner.client instance_id, database_id
+
+  client.transaction tag: "Tag-1" do |transaction|
+    transaction.execute_update(
+      "INSERT INTO Singers (SingerId, FirstName, LastName) VALUES (10, 'Virginia', 'Watson')",
+      tag: "Tag-1-1"
+    )
+
+    transaction.read("Singers", [:SingerId, :FirstName, :LastName], tag: "Tag-1-2").rows.each do |row|
+      puts "#{row[:SingerId]} #{row[:FirstName]} #{row[:LastName]}"
+    end
+
+    row_counts = transaction.batch_update tag: "Tag-1-3" do |b|
+      b.batch_update "INSERT INTO Albums "\
+        "(SingerId, AlbumId, AlbumTitle, MarketingBudget) "\
+        "VALUES (1, 3, 'Test Album Title', 10000)"
+    end
+  end
+end
+
 def usage
   puts <<~USAGE
 
@@ -1950,6 +2046,10 @@ def usage
       delete_backup                      <instance_id> <backup_id> Delete a backup.
       update_backup                      <instance_id> <backup_id> Update the backup.
       set_custom_timeout_and_retry       <instance_id> <database_id> Set custom timeout and retry settings.
+      read_write_execute_query_tagging   <instance_id> <database_id> Read, write and query data with tagging.
+      batch_write_delete_tagging         <instance_id> <database_id> Write data in batch and delete with tagging.
+      partition_update_tagging           <instance_id> <database_id> Execute a Partitioned DML with tagging.
+      transaction_tagging                <instance_id> <database_id> Execute a transaction with tagging.
 
     Environment variables:
       GOOGLE_CLOUD_PROJECT must be set to your Google Cloud project ID
@@ -1990,7 +2090,9 @@ def run_sample arguments
     "list_backup_operations", "list_database_operations", "list_backups",
     "delete_backup", "update_backup_expiration_time",
     "set_custom_timeout_and_retry", "query_with_numeric_parameter",
-    "update_data_with_numeric_column"
+    "update_data_with_numeric_column", "read_write_execute_query_tagging",
+    "batch_write_delete_tagging", "partition_update_tagging",
+    "transaction_tagging"
   ]
   if command.eql?("query_data_with_index") && instance_id && database_id && arguments.size >= 2
     query_data_with_index project_id:  project_id,
