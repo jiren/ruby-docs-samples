@@ -1895,6 +1895,8 @@ def read_write_execute_query_tagging project_id:, instance_id:, database_id:
   client.commit tag: "Tag-3" do |c|
     c.insert "Singers", [{ SingerId: 1, FirstName: "Marc", LastName: "Richards" }]
   end
+
+  puts "Executed read write and commit with request tagging."
 end
 
 def batch_write_delete_tagging project_id:, instance_id:, database_id:
@@ -1920,7 +1922,9 @@ def batch_write_delete_tagging project_id:, instance_id:, database_id:
   client.replace "Singers", [{ SingerId: 1, FirstName: "Marc", LastName: "Richards" }],
                  tag: "Tag-4"
 
-  client.delete "users", [1], tag: "Tag-5"
+  client.delete "users", [1, 2], tag: "Tag-5"
+
+  puts "Executed bulk insert, update and delete with tagging"
 end
 
 def partition_update_tagging project_id:, instance_id:, database_id:
@@ -1938,6 +1942,8 @@ def partition_update_tagging project_id:, instance_id:, database_id:
     "UPDATE Albums SET MarketingBudget = 100000 WHERE SingerId > 1",
     tag: "Tag-6"
   )
+
+  puts "Executed partition update with tagging."
 end
 
 def transaction_tagging project_id:, instance_id:, database_id:
@@ -1967,6 +1973,8 @@ def transaction_tagging project_id:, instance_id:, database_id:
         "VALUES (1, 3, 'Test Album Title', 10000)"
     end
   end
+
+  puts "Executed transaction with tagging."
 end
 
 def usage

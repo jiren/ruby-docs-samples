@@ -1647,4 +1647,64 @@ describe "Google Cloud Spanner API samples" do
     expect(singers.count).to eq 6
     expect(singers.find { |s| s[:FirstName] == "Virginia" }).not_to be nil
   end
+
+  example "read write execute and query with tagging" do
+    database = create_singers_albums_database
+
+    capture do
+      read_write_execute_query_tagging project_id:  @project_id,
+                                       instance_id: @instance.instance_id,
+                                       database_id: database.database_id
+
+    end
+
+    expect(captured_output).to include(
+      "Executed read write and commit with request tagging"
+    )
+  end
+
+  example "batch write and delete with tagging" do
+    database = create_singers_albums_database
+
+    capture do
+      batch_write_delete_tagging project_id:  @project_id,
+                                 instance_id: @instance.instance_id,
+                                 database_id: database.database_id
+
+    end
+
+    expect(captured_output).to include(
+      "Executed bulk insert, update and delete"
+    )
+  end
+
+  example "partition update with tagging" do
+    database = create_singers_albums_database
+
+    capture do
+      partition_update_tagging project_id:  @project_id,
+                                 instance_id: @instance.instance_id,
+                                 database_id: database.database_id
+
+    end
+
+    expect(captured_output).to include(
+      "Executed partition update with tagging"
+    )
+  end
+
+  example "transaction with tagging" do
+    database = create_singers_albums_database
+
+    capture do
+      transaction_tagging project_id:  @project_id,
+                          instance_id: @instance.instance_id,
+                          database_id: database.database_id
+
+    end
+
+    expect(captured_output).to include(
+      "Executed transaction with tagging"
+    )
+  end
 end
